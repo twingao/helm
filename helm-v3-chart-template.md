@@ -136,6 +136,34 @@ values文件也可以包含更多结构化内容。在values.yaml文件中可以
       drink: coffee
       food: pizza
 
+可以在命令行中通过set覆盖values.yaml参数缺省值。
+
+    helm template my-release mychart --set favorite.drink=tea
+    ---
+    # Source: mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: my-release-configmap
+    data:
+      myvalue: "Hello World"
+      drink: tea
+      food: pizza
+
+也可以在命令行中通过set删除values.yaml参数。
+
+    helm template my-release mychart --set favorite.drink=null
+    ---
+    # Source: mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: my-release-configmap
+    data:
+      myvalue: "Hello World"
+      drink:
+      food: pizza
+
 - ### 函数
 
 在模板文件中有时不想直接引用对象，而是需要对对象做一些转换，比如将对象作为字符串引用，可以使用函数quote。
@@ -518,6 +546,95 @@ with用来控制变量作用域。前面提过，前导"."是对当前作用域�
         - "Cheese"
         - "Peppers"
         - "Onions"
+
+顺便看看如何在命令行中设置数组参数。values.yaml文件可以不配置任何参数。
+
+    vi mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ .Release.Name }}-configmap
+    data:
+      myvalue: "Hello World"
+    {{- if .Values.pizzaToppings }}
+      toppings:
+    {{ toYaml .Values.pizzaToppings | indent 4 }}
+    {{ end }}
+
+    helm template myrelease mychart \
+      --set pizzaToppings[0]=chili \
+      --set pizzaToppings[1]=pork \
+      --set pizzaToppings[2]=bamboo \
+      --set pizzaToppings[3]=pineapple
+    ---
+    # Source: mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: myrelease-configmap
+    data:
+      myvalue: "Hello World"
+      toppings: |-
+        - chili
+        - pork
+        - bamboo
+        - pineapple
+
+再看看另一种数组。values.yaml文件可以不配置任何参数。
+
+    vi mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ .Release.Name }}-configmap
+    data:
+      myvalue: "Hello World"
+    {{- if .Values.favorites }}
+      favorites:
+    {{ toYaml .Values.favorites | indent 4 }}
+    {{ end }}
+    
+    helm template myrelease mychart \
+      --set favorites[0].drink=coffee \
+      --set favorites[0].food=pizza \
+      --set favorites[1].drink=tea \
+      --set favorites[1].food=hotpot
+    ---
+    # Source: mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: myrelease-configmap
+    data:
+      myvalue: "Hello World"
+      favorites:
+        - drink: coffee
+          food: pizza
+        - drink: tea
+          food: hotpot
+
+参数值中的逗号","需要转义。
+
+    vi mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ .Release.Name }}-configmap
+    data:
+      myvalue: "Hello World"
+      drink: {{ .Values.favorite.drink }}
+
+    helm template myrelease mychart \
+      --set favorite.drink="coffee\,tea"
+    ---
+    # Source: mychart/templates/configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: myrelease-configmap
+    data:
+      myvalue: "Hello World"
+      drink: coffee,tea
 
 - ### 变量
 
