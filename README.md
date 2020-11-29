@@ -10,3 +10,4 @@
 
 - #### [Helm Hook钩子](helm-v3-hook.md)
 
+- #### [Helm 一些常见的疑难用法](helm-v3-difficult-usage.md)
